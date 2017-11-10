@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Argo Deep Dream</title>
+    <style>
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+        }
+        video {
+            position: absolute;
+            left: 50%;
+            bottom: 50%;
+            transform: translateX(-50%) translateY(50%);
+        }
+        .intro {
+            background: linear-gradient(to bottom, rgba(44, 46, 81, 0.9) 0%, rgba(75, 88, 146, 0.9) 100%), url(https://applatix.com/open-source/argo/assets/images/stars.gif);
+            height: 100%;
+            width: 100%;
+        }
+        img {
+            width: 100px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="intro">
+        <img src="https://applatix.com/open-source/argo/assets/images/argo-wheel.png">
+        <video width="640" height="480" controls><source src="output/result/output.mp4" type="video/mp4"></video>
+    </div>
+</body>
+
+</html>

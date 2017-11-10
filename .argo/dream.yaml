@@ -1,0 +1,108 @@
+---
+type: workflow
+version: 1
+name: deep-dream-demo
+inputs:
+  parameters:
+    COMMIT:
+      default: "%%session.commit%%"
+    REPO:
+      default: "%%session.repo%%"
+    IMAGE_URL:
+      default: "https://storage.googleapis.com/deep-dream-argo/game-of-thrones.png"
+    MODEL:
+      default: "inception_3b/5x5_reduce"
+steps:
+- CHECKOUT:
+    template: argo-checkout
+  DOWNLOAD-IMAGE:
+    image: sequenceiq/alpine-curl
+    command: ["sh", "-c"]
+    args: ["curl %%inputs.parameters.IMAGE_URL%% > image.jpg"]
+    outputs:
+      artifacts:
+        IMAGE:
+          path: /image.jpg
+- SPLIT-IMAGE:
+    image: acleancoder/imagemagick-full
+    command: ["bash", "-c"]
+    args: [
+      convert /src/image.jpg -strip -interlace Plane -gaussian-blur 0.05 -quality 85% -crop 646x360+0+0 /0.jpg &&
+      convert /src/image.jpg -strip -interlace Plane -gaussian-blur 0.05 -quality 85% -crop 646x360+646+0 /1.jpg &&
+      convert /src/image.jpg -strip -interlace Plane -gaussian-blur 0.05 -quality 85% -crop 646x360+0+360 /2.jpg &&
+      convert /src/image.jpg -strip -interlace Plane -gaussian-blur 0.05 -quality 85% -crop 646x360+646+360 /3.jpg
+    ]
+    inputs:
+      artifacts:
+        IMAGE:
+          from: "%%steps.DOWNLOAD-IMAGE.outputs.artifacts.IMAGE%%"
+          path: /src
+    outputs:
+      artifacts:
+        IMAGE_0: {path: /0.jpg}
+        IMAGE_1: {path: /1.jpg}
+        IMAGE_2: {path: /2.jpg}
+        IMAGE_3: {path: /3.jpg}
+- PROCESS_0:
+    template: deep-dream-process-image
+    arguments: { parameters.FILE-NAME: "0.jpg", artifacts.CODE: "%%steps.CHECKOUT.outputs.artifacts.CODE%%", artifacts.IMAGE: "%%steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_0%%" }
+  PROCESS_1:
+    template: deep-dream-process-image
+    arguments: { parameters.FILE-NAME: "1.jpg", artifacts.CODE: "%%steps.CHECKOUT.outputs.artifacts.CODE%%", artifacts.IMAGE: "%%steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_1%%" }
+  PROCESS_2:
+    template: deep-dream-process-image
+    arguments: { parameters.FILE-NAME: "2.jpg", artifacts.CODE: "%%steps.CHECKOUT.outputs.artifacts.CODE%%", artifacts.IMAGE: "%%steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_2%%" }
+  PROCESS_3:
+    template: deep-dream-process-image
+    arguments: { parameters.FILE-NAME: "3.jpg", artifacts.CODE: "%%steps.CHECKOUT.outputs.artifacts.CODE%%", artifacts.IMAGE: "%%steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_3%%" }
+- VIDEO:
+    image: acleancoder/imagemagick-full
+    inputs:
+      artifacts:
+        CODE: { from: "%%steps.CHECKOUT.outputs.artifacts.CODE%%", path: "/src" }
+        SRC_IMAGE: { from: "%%steps.DOWNLOAD-IMAGE.outputs.artifacts.IMAGE%%", path: "/src/output/result" }
+        IMAGES_0: { from: "%%steps.PROCESS_0.outputs.artifacts.IMAGES%%", path: "/src/output/0" }
+        IMAGES_1: { from: "%%steps.PROCESS_1.outputs.artifacts.IMAGES%%", path: "/src/output/1" }
+        IMAGES_2: { from: "%%steps.PROCESS_2.outputs.artifacts.IMAGES%%", path: "/src/output/2" }
+        IMAGES_3: { from: "%%steps.PROCESS_3.outputs.artifacts.IMAGES%%", path: "/src/output/3" }
+    command: ["bash", "-c"]
+    args: [cd /src && mv /src/output/result/image.jpg /src/output/result/-1.jpg && ./concat.sh && convert -delay 100 ./output/result/* ./output/result/output.mp4]
+    outputs:
+      artifacts:
+        VIDEO:
+          path: /src
+          meta_data:
+          - browsable
+
+---
+type: container
+version: 1
+name: deep-dream-process-image
+inputs:
+  parameters:
+    FILE-NAME:
+    MODEL:
+  artifacts:
+    IMAGE:
+      path: /data
+    CODE:
+      path: /src
+resources:
+  mem_mib: 4096
+  cpu_cores: 0.3
+image: herval/deepdream
+env:
+- name: INPUT
+  value: "%%inputs.parameters.FILE-NAME%%"
+- name: ITER
+  value: "5"
+- name: SCALE
+  value: "0.10"
+- name: MODEL
+  value: "%%inputs.parameters.MODEL%%"
+command: ["bash", "-c"]
+args: [python -u /src/argo-deep-dream.py]
+outputs:
+  artifacts:
+    IMAGES:
+      path: /data/output
