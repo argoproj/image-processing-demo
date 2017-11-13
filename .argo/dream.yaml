@@ -95,7 +95,7 @@ env:
 - name: INPUT
   value: "%%inputs.parameters.FILE-NAME%%"
 - name: ITER
-  value: "5"
+  value: "10"
 - name: SCALE
   value: "0.10"
 - name: MODEL
