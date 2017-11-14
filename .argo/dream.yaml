@@ -57,6 +57,9 @@ steps:
     arguments: { parameters.FILE-NAME: "3.jpg", artifacts.CODE: "%%steps.CHECKOUT.outputs.artifacts.CODE%%", artifacts.IMAGE: "%%steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_3%%" }
 - VIDEO:
     image: acleancoder/imagemagick-full
+    resources:
+      mem_mib: 4096
+      cpu_cores: 0.3
     inputs:
       artifacts:
         CODE: { from: "%%steps.CHECKOUT.outputs.artifacts.CODE%%", path: "/src" }
