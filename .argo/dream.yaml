@@ -12,6 +12,8 @@ inputs:
       default: "https://storage.googleapis.com/deep-dream-argo/game-of-thrones.png"
     MODEL:
       default: "inception_3b/5x5_reduce"
+    ITERATIONS:
+      default: "2"
 steps:
 - CHECKOUT:
     template: argo-checkout
@@ -85,6 +87,7 @@ inputs:
   parameters:
     FILE-NAME:
     MODEL:
+    ITERATIONS:
   artifacts:
     IMAGE:
       path: /data
@@ -98,7 +101,7 @@ env:
 - name: INPUT
   value: "%%inputs.parameters.FILE-NAME%%"
 - name: ITER
-  value: "10"
+  value: "%%inputs.parameters.ITERATIONS%%"
 - name: SCALE
   value: "0.10"
 - name: MODEL

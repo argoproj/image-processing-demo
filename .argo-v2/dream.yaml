@@ -1,0 +1,184 @@
+apiVersion: argoproj.io/v1
+kind: Workflow
+metadata:
+  generateName: argo-wf-
+spec:
+  entrypoint: deep-dream-demo
+  templates:
+  - name: deep-dream-demo
+    inputs:
+      parameters:
+      - name: IMAGE_URL
+        default: "https://storage.googleapis.com/deep-dream-argo/game-of-thrones.png"
+      - name: MODEL
+        default: "inception_3b/5x5_reduce"
+      artifacts:
+      - name: CODE
+        path: /src
+        git:
+          repo: https://github.com/argoproj/image-processing-demo.git
+    steps:
+    - - name: DOWNLOAD-IMAGE
+        template: download-image
+        arguments:
+          parameters:
+          - name: IMAGE_URL
+            value: "{{inputs.parameters.IMAGE_URL}}"
+    - - name: SPLIT-IMAGE
+        template: split-image
+        arguments:
+          artifacts:
+          - name: IMAGE
+            from: "{{steps.DOWNLOAD-IMAGE.outputs.artifacts.IMAGE}}"
+    - - name: PROCESS_0
+        template: deep-dream-process-image
+        withItems:
+        arguments:
+          parameters:
+          - name: FILE-NAME
+            value: "0.jpg"
+          - name: MODEL
+            value: "{{inputs.parameters.MODEL}}"
+          artifacts:
+          - name: "CODE"
+            from: "{{inputs.artifacts.CODE}}"
+          - name: "IMAGE"
+            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_0}}"
+      - name: PROCESS_1
+        template: deep-dream-process-image
+        withItems:
+        arguments:
+          parameters:
+          - name: FILE-NAME
+            value: "1.jpg"
+          - name: MODEL
+            value: "{{inputs.parameters.MODEL}}"
+          artifacts:
+          - name: "CODE"
+            from: "{{inputs.artifacts.CODE}}"
+          - name: "IMAGE"
+            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_1}}"
+      - name: PROCESS_2
+        template: deep-dream-process-image
+        withItems:
+        arguments:
+          parameters:
+          - name: FILE-NAME
+            value: "2.jpg"
+          - name: MODEL
+            value: "{{inputs.parameters.MODEL}}"
+          artifacts:
+          - name: "CODE"
+            from: "{{inputs.artifacts.CODE}}"
+          - name: "IMAGE"
+            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_2}}"
+      - name: PROCESS_3
+        template: deep-dream-process-image
+        withItems:
+        arguments:
+          parameters:
+          - name: FILE-NAME
+            value: "3.jpg"
+          - name: MODEL
+            value: "{{inputs.parameters.MODEL}}"
+          artifacts:
+          - name: "CODE"
+            from: "{{inputs.artifacts.CODE}}"
+          - name: "IMAGE"
+            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_3}}"
+    - - name: VIDEO
+        template: deep-dream-video
+        arguments:
+          artifacts:
+          - { name: CODE, from: "{{inputs.artifacts.CODE}}" }
+          - { name: SRC_IMAGE, from: "{{steps.DOWNLOAD-IMAGE.outputs.artifacts.IMAGE}}" }
+          - { name: IMAGES_0, from: "{{steps.PROCESS_0.outputs.artifacts.IMAGES}}" }
+          - { name: IMAGES_1, from: "{{steps.PROCESS_1.outputs.artifacts.IMAGES}}" }
+          - { name: IMAGES_2, from: "{{steps.PROCESS_2.outputs.artifacts.IMAGES}}" }
+          - { name: IMAGES_3, from: "{{steps.PROCESS_3.outputs.artifacts.IMAGES}}" }
+
+  - name: deep-dream-video
+    inputs:
+      artifacts:
+        - { name: CODE, path: "/src" }
+        - { name: SRC_IMAGE, path: "/src/output/result/-1.jpg" }
+        - { name: IMAGES_0, path: "/src/output/0" }
+        - { name: IMAGES_1, path: "/src/output/1" }
+        - { name: IMAGES_2, path: "/src/output/2" }
+        - { name: IMAGES_3, path: "/src/output/3" }
+    container:
+      image: acleancoder/imagemagick-full
+      resources:
+        mem_mib: 4096
+        cpu_cores: 0.3
+      command: ["bash", "-c"]
+      args: [cd /src && ./concat.sh && convert -delay 100 ./output/result/* ./output/result/output.mp4]
+    outputs:
+      artifacts:
+        - name: VIDEO
+          path: /src
+
+  - name: deep-dream-process-image
+    inputs:
+      parameters:
+        - name: FILE-NAME
+        - name: MODEL
+      artifacts:
+        - name: IMAGE
+          path: "/data/{{inputs.parameters.FILE-NAME}}"
+        - name: CODE
+          path: /src
+    resources:
+      mem_mib: 4096
+      cpu_cores: 0.3
+    container:
+      image: herval/deepdream
+      env:
+      - name: INPUT
+        value: "{{inputs.parameters.FILE-NAME}}"
+      - name: ITER
+        value: "1"
+      - name: SCALE
+        value: "0.10"
+      - name: MODEL
+        value: "{{inputs.parameters.MODEL}}"
+      command: ["bash", "-c"]
+      args: [python -u /src/argo-deep-dream.py]
+    outputs:
+      artifacts:
+        - name: IMAGES
+          path: /data/output
+
+  - name: split-image
+    inputs:
+      artifacts:
+      - name: IMAGE
+        path: /src/image.jpg
+    container:
+      image: acleancoder/imagemagick-full
+      command: ["bash", "-c"]
+      args: [
+        convert /src/image.jpg -strip -interlace Plane -gaussian-blur 0.05 -quality 85% -crop 646x360+0+0 /0.jpg &&
+        convert /src/image.jpg -strip -interlace Plane -gaussian-blur 0.05 -quality 85% -crop 646x360+646+0 /1.jpg &&
+        convert /src/image.jpg -strip -interlace Plane -gaussian-blur 0.05 -quality 85% -crop 646x360+0+360 /2.jpg &&
+        convert /src/image.jpg -strip -interlace Plane -gaussian-blur 0.05 -quality 85% -crop 646x360+646+360 /3.jpg
+      ]
+    outputs:
+      artifacts:
+      - {name: IMAGE_0, path: /0.jpg}
+      - {name: IMAGE_1, path: /1.jpg}
+      - {name: IMAGE_2, path: /2.jpg}
+      - {name: IMAGE_3, path: /3.jpg}
+
+  - name: download-image
+    inputs:
+      parameters:
+      - name: IMAGE_URL
+    container:
+      image: sequenceiq/alpine-curl
+      command: ["sh", "-c"]
+      args: ["curl {{inputs.parameters.IMAGE_URL}} > image.jpg"]
+    outputs:
+      artifacts:
+        - name: IMAGE
+          path: /image.jpg

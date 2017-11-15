@@ -8,7 +8,8 @@ OUTPUT3=($(ls -d ./output/3/????.jpg))
 mkdir -p ./output/result
 
 for i in $(seq 1 ${#OUTPUT0[@]}); do
-    convert "${OUTPUT0[$i]}" "${OUTPUT1[$i]}" +append /tmp/1.jpg
-    convert "${OUTPUT2[$i]}" "${OUTPUT3[$i]}" +append /tmp/2.jpg
-    convert /tmp/1.jpg /tmp/2.jpg -append "./output/result/$i.jpg"
+    j=$(expr $i - 1)
+    convert "${OUTPUT0[$j]}" "${OUTPUT1[$j]}" +append /tmp/1.jpg
+    convert "${OUTPUT2[$j]}" "${OUTPUT3[$j]}" +append /tmp/2.jpg
+    convert /tmp/1.jpg /tmp/2.jpg -append "./output/result/$j.jpg"
 done
