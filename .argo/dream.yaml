@@ -13,7 +13,7 @@ inputs:
     MODEL:
       default: "inception_3b/5x5_reduce"
     ITERATIONS:
-      default: "2"
+      default: "3"
 steps:
 - CHECKOUT:
     template: argo-checkout

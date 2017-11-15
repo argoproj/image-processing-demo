@@ -12,6 +12,8 @@ spec:
         default: "https://storage.googleapis.com/deep-dream-argo/game-of-thrones.png"
       - name: MODEL
         default: "inception_3b/5x5_reduce"
+      - name: ITERATIONS
+        default: "3"
       artifacts:
       - name: CODE
         path: /src
@@ -39,6 +41,8 @@ spec:
             value: "0.jpg"
           - name: MODEL
             value: "{{inputs.parameters.MODEL}}"
+          - name: ITERATIONS
+            value: "{{inputs.parameters.ITERATIONS}}"
           artifacts:
           - name: "CODE"
             from: "{{inputs.artifacts.CODE}}"
@@ -53,6 +57,8 @@ spec:
             value: "1.jpg"
           - name: MODEL
             value: "{{inputs.parameters.MODEL}}"
+          - name: ITERATIONS
+            value: "{{inputs.parameters.ITERATIONS}}"
           artifacts:
           - name: "CODE"
             from: "{{inputs.artifacts.CODE}}"
@@ -67,6 +73,8 @@ spec:
             value: "2.jpg"
           - name: MODEL
             value: "{{inputs.parameters.MODEL}}"
+          - name: ITERATIONS
+            value: "{{inputs.parameters.ITERATIONS}}"
           artifacts:
           - name: "CODE"
             from: "{{inputs.artifacts.CODE}}"
@@ -81,6 +89,8 @@ spec:
             value: "3.jpg"
           - name: MODEL
             value: "{{inputs.parameters.MODEL}}"
+          - name: ITERATIONS
+            value: "{{inputs.parameters.ITERATIONS}}"
           artifacts:
           - name: "CODE"
             from: "{{inputs.artifacts.CODE}}"
@@ -123,6 +133,7 @@ spec:
       parameters:
         - name: FILE-NAME
         - name: MODEL
+        - name: ITERATIONS
       artifacts:
         - name: IMAGE
           path: "/data/{{inputs.parameters.FILE-NAME}}"
@@ -137,7 +148,7 @@ spec:
       - name: INPUT
         value: "{{inputs.parameters.FILE-NAME}}"
       - name: ITER
-        value: "1"
+        value: "{{inputs.parameters.ITERATIONS}}"
       - name: SCALE
         value: "0.10"
       - name: MODEL
