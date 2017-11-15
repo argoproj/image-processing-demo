@@ -13,7 +13,7 @@ spec:
       - name: MODEL
         default: "inception_3b/5x5_reduce"
       - name: ITERATIONS
-        default: "3"
+        default: "8"
       artifacts:
       - name: CODE
         path: /src
