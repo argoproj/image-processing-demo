@@ -16,7 +16,6 @@ spec:
         default: "8"
       artifacts:
       - name: CODE
-        path: /src
         git:
           repo: https://github.com/argoproj/image-processing-demo.git
     steps:
