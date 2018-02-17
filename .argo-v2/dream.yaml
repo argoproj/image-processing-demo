@@ -8,7 +8,7 @@ spec:
   - name: deep-dream-demo
     inputs:
       parameters:
-      - name: IMAGE_URL
+      - name: IMAGE-URL
         default: "https://storage.googleapis.com/deep-dream-argo/game-of-thrones.png"
       - name: MODEL
         default: "inception_3b/5x5_reduce"
@@ -23,15 +23,15 @@ spec:
         template: download-image
         arguments:
           parameters:
-          - name: IMAGE_URL
-            value: "{{inputs.parameters.IMAGE_URL}}"
+          - name: IMAGE-URL
+            value: "{{inputs.parameters.IMAGE-URL}}"
     - - name: SPLIT-IMAGE
         template: split-image
         arguments:
           artifacts:
           - name: IMAGE
             from: "{{steps.DOWNLOAD-IMAGE.outputs.artifacts.IMAGE}}"
-    - - name: PROCESS_0
+    - - name: PROCESS-0
         template: deep-dream-process-image
         withItems:
         arguments:
@@ -46,8 +46,8 @@ spec:
           - name: "CODE"
             from: "{{inputs.artifacts.CODE}}"
           - name: "IMAGE"
-            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_0}}"
-      - name: PROCESS_1
+            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE-0}}"
+      - name: PROCESS-1
         template: deep-dream-process-image
         withItems:
         arguments:
@@ -62,8 +62,8 @@ spec:
           - name: "CODE"
             from: "{{inputs.artifacts.CODE}}"
           - name: "IMAGE"
-            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_1}}"
-      - name: PROCESS_2
+            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE-1}}"
+      - name: PROCESS-2
         template: deep-dream-process-image
         withItems:
         arguments:
@@ -78,8 +78,8 @@ spec:
           - name: "CODE"
             from: "{{inputs.artifacts.CODE}}"
           - name: "IMAGE"
-            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_2}}"
-      - name: PROCESS_3
+            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE-2}}"
+      - name: PROCESS-3
         template: deep-dream-process-image
         withItems:
         arguments:
@@ -94,27 +94,27 @@ spec:
           - name: "CODE"
             from: "{{inputs.artifacts.CODE}}"
           - name: "IMAGE"
-            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE_3}}"
+            from: "{{steps.SPLIT-IMAGE.outputs.artifacts.IMAGE-3}}"
     - - name: VIDEO
         template: deep-dream-video
         arguments:
           artifacts:
           - { name: CODE, from: "{{inputs.artifacts.CODE}}" }
-          - { name: SRC_IMAGE, from: "{{steps.DOWNLOAD-IMAGE.outputs.artifacts.IMAGE}}" }
-          - { name: IMAGES_0, from: "{{steps.PROCESS_0.outputs.artifacts.IMAGES}}" }
-          - { name: IMAGES_1, from: "{{steps.PROCESS_1.outputs.artifacts.IMAGES}}" }
-          - { name: IMAGES_2, from: "{{steps.PROCESS_2.outputs.artifacts.IMAGES}}" }
-          - { name: IMAGES_3, from: "{{steps.PROCESS_3.outputs.artifacts.IMAGES}}" }
+          - { name: SRC-IMAGE, from: "{{steps.DOWNLOAD-IMAGE.outputs.artifacts.IMAGE}}" }
+          - { name: IMAGES-0, from: "{{steps.PROCESS-0.outputs.artifacts.IMAGES}}" }
+          - { name: IMAGES-1, from: "{{steps.PROCESS-1.outputs.artifacts.IMAGES}}" }
+          - { name: IMAGES-2, from: "{{steps.PROCESS-2.outputs.artifacts.IMAGES}}" }
+          - { name: IMAGES-3, from: "{{steps.PROCESS-3.outputs.artifacts.IMAGES}}" }
 
   - name: deep-dream-video
     inputs:
       artifacts:
         - { name: CODE, path: "/src" }
-        - { name: SRC_IMAGE, path: "/src/output/result/-1.jpg" }
-        - { name: IMAGES_0, path: "/src/output/0" }
-        - { name: IMAGES_1, path: "/src/output/1" }
-        - { name: IMAGES_2, path: "/src/output/2" }
-        - { name: IMAGES_3, path: "/src/output/3" }
+        - { name: SRC-IMAGE, path: "/src/output/result/-1.jpg" }
+        - { name: IMAGES-0, path: "/src/output/0" }
+        - { name: IMAGES-1, path: "/src/output/1" }
+        - { name: IMAGES-2, path: "/src/output/2" }
+        - { name: IMAGES-3, path: "/src/output/3" }
     container:
       image: acleancoder/imagemagick-full
       resources:
@@ -175,19 +175,19 @@ spec:
       ]
     outputs:
       artifacts:
-      - {name: IMAGE_0, path: /0.jpg}
-      - {name: IMAGE_1, path: /1.jpg}
-      - {name: IMAGE_2, path: /2.jpg}
-      - {name: IMAGE_3, path: /3.jpg}
+      - {name: IMAGE-0, path: /0.jpg}
+      - {name: IMAGE-1, path: /1.jpg}
+      - {name: IMAGE-2, path: /2.jpg}
+      - {name: IMAGE-3, path: /3.jpg}
 
   - name: download-image
     inputs:
       parameters:
-      - name: IMAGE_URL
+      - name: IMAGE-URL
     container:
       image: sequenceiq/alpine-curl
       command: ["sh", "-c"]
-      args: ["curl {{inputs.parameters.IMAGE_URL}} > image.jpg"]
+      args: ["curl {{inputs.parameters.IMAGE-URL}} > image.jpg"]
     outputs:
       artifacts:
         - name: IMAGE
